@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="trayPetalGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+
+  <g id="trayFlower" transform="translate(16, 16)">
+    <path d="M 0 0 C -4.4 -3.2, -3.8 -12, 0 -13.8 C 3.8 -12, 4.4 -3.2, 0 0 Z" fill="url(#trayPetalGrad)" />
+    <path d="M 0 0 C -4.4 -3.2, -3.8 -12, 0 -13.8 C 3.8 -12, 4.4 -3.2, 0 0 Z" fill="url(#trayPetalGrad)" transform="rotate(72)" />
+    <path d="M 0 0 C -4.4 -3.2, -3.8 -12, 0 -13.8 C 3.8 -12, 4.4 -3.2, 0 0 Z" fill="url(#trayPetalGrad)" transform="rotate(144)" />
+    <path d="M 0 0 C -4.4 -3.2, -3.8 -12, 0 -13.8 C 3.8 -12, 4.4 -3.2, 0 0 Z" fill="url(#trayPetalGrad)" transform="rotate(216)" />
+    <path d="M 0 0 C -4.4 -3.2, -3.8 -12, 0 -13.8 C 3.8 -12, 4.4 -3.2, 0 0 Z" fill="url(#trayPetalGrad)" transform="rotate(288)" />
+
+    <circle cx="0" cy="0" r="3.2" fill="#ffffff" />
+  </g>
+</svg>

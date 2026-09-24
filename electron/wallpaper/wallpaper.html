@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wally Live Wallpaper</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000000;
+      pointer-events: none;
+    }
+
+    .video-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+      will-change: opacity;
+    }
+
+    .video-layer.active {
+      opacity: 1;
+      z-index: 2;
+    }
+
+    .video-layer.standby {
+      opacity: 0;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <video id="videoA" class="video-layer" playsinline muted loop></video>
+  <video id="videoB" class="video-layer" playsinline muted loop></video>
+
+  <script src="wallpaper-renderer.js"></script>
+</body>
+</html>

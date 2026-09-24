@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "NwrullcSCh8=",
+  "success": false,
+  "projectFilePath": "C:\\Users\\aayus\\Documents\\antigravity\\peaceful-euclid\\electron\\wallpaper\\native\\WallyAttacher.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "libraryId": "Microsoft.NET.ILLink.Tasks"
+    }
+  ]
+}

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wally - Live Wallpaper</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <!-- Windows Title Bar -->
+  <header class="titlebar">
+    <div class="titlebar-left">
+      <img src="../assets/icons/icon.png" alt="Wally" class="titlebar-icon">
+      <span class="titlebar-title">Wally</span>
+      <span id="titlebarStatusBadge" class="titlebar-badge">Live Wallpaper</span>
+    </div>
+    <div class="titlebar-controls">
+      <button id="btnMinimize" class="titlebar-btn" title="Minimize">
+        <svg width="11" height="1" viewBox="0 0 11 1"><rect width="11" height="1" fill="currentColor"/></svg>
+      </button>
+      <button id="btnMaximize" class="titlebar-btn" title="Maximize">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M0,0v10h10V0H0z M9,9H1V1h8V9z" fill="currentColor"/></svg>
+      </button>
+      <button id="btnClose" class="titlebar-btn close" title="Close to Tray">
+        <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="10,0.7 9.3,0 5,4.3 0.7,0 0,0.7 4.3,5 0,9.3 0.7,10 5,5.7 9.3,10 10,9.3 5.7,5" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Application Shell -->
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="../assets/icons/tray.png" alt="Wally Flower">
+        </div>
+        <div class="brand-info">
+          <span class="brand-name">Wally</span>
+          <span class="brand-sub">Windows Live Wallpaper</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-item active" data-view="home">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </div>
+        <div class="nav-item" data-view="wallpapers">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          <span>Wallpapers</span>
+          <span id="navWallpaperCount" class="nav-badge">0</span>
+        </div>
+        <div class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
+        </div>
+        <div class="nav-item" data-view="about">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>About</span>
+        </div>
+      </nav>
+
+      <!-- Sidebar Mini Widget -->
+      <div class="sidebar-mini-player">
+        <div class="mini-player-header">
+          <span class="live-indicator-dot"></span>
+          <span id="miniStatusText">Live Wallpaper</span>
+        </div>
+        <div id="miniPlayerTitle" class="mini-player-title">No Wallpaper Selected</div>
+        <div class="mini-player-controls">
+          <button id="miniBtnPrev" class="mini-btn" title="Previous">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+          <button id="miniBtnPlay" class="mini-btn play" title="Play / Pause">
+            <svg id="miniPlayIcon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <button id="miniBtnNext" class="mini-btn" title="Next">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+          <button id="miniBtnMute" class="mini-btn" title="Mute / Unmute">
+            <svg id="miniMuteIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <!-- 1. HOME VIEW -->
+      <section id="view-home" class="view active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Monitor and control your live desktop wallpaper</p>
+          </div>
+          <div class="header-actions">
+            <button id="btnQuickAddFolder" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              <span>Add Folder</span>
+            </button>
+            <button id="btnBrowseLibrary" class="btn btn-primary">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+              <span>Wallpaper Library</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Hero Live Preview Card -->
+          <div class="hero-preview-card">
+            <div class="hero-media-wrapper">
+              <video id="heroVideo" class="hero-video" loop muted playsinline></video>
+              <div id="heroPlaceholder" class="hero-placeholder">
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <p>No video selected as live wallpaper yet</p>
+                <button id="btnSelectFromLibrary" class="btn btn-primary" style="margin-top: 8px;">Select a Wallpaper</button>
+              </div>
+
+              <div class="hero-badges-overlay">
+                <div id="heroStatusBadge" class="status-badge live">
+                  <span class="dot"></span>
+                  <span id="heroStatusText">ACTIVE ON DESKTOP</span>
+                </div>
+                <div class="header-actions">
+                  <button id="btnRevealFile" class="btn btn-secondary btn-icon-only" title="Show in File Explorer">
+                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="meta-overlay">
+                <div>
+                  <h2 id="heroTitle" class="hero-title">Select a Video</h2>
+                  <p id="heroSubtitle" class="hero-subtitle">Your desktop will spring to life with smooth video motion</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Playback Panel -->
+            <div class="playback-panel">
+              <div class="playback-controls-center">
+                <!-- Shuffle -->
+                <button id="btnShuffle" class="ctrl-btn" title="Toggle Shuffle">
+                  <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                </button>
+                <!-- Prev -->
+                <button id="btnPrev" class="ctrl-btn" title="Previous Wallpaper">
+                  <svg viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                </button>
+                <!-- Play / Pause -->
+                <button id="btnPlay" class="ctrl-btn btn-play-hero" title="Play / Pause">
+                  <svg id="heroPlayIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <!-- Next -->
+                <button id="btnNext" class="ctrl-btn" title="Next Wallpaper">
+                  <svg viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+                <!-- Loop -->
+                <button id="btnLoop" class="ctrl-btn active" title="Toggle Single Video Loop">
+                  <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                </button>
+              </div>
+
+              <!-- Volume & Mute -->
+              <div class="playback-volume-cluster">
+                <button id="btnMute" class="ctrl-btn" title="Mute / Unmute">
+                  <svg id="heroMuteIcon" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                </button>
+                <input id="volumeSlider" type="range" min="0" max="100" value="50" class="volume-slider">
+                <span id="volumeText" class="volume-text">50%</span>
+              </div>
+
+              <!-- Stop Button -->
+              <div>
+                <button id="btnStopWallpaper" class="btn btn-danger">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                  <span>Stop Wallpaper</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Settings Strip -->
+          <div class="quick-settings-strip">
+            <div class="quick-card">
+              <span class="quick-card-title">Auto-Change Interval</span>
+              <select id="quickIntervalSelect" class="select-control">
+                <option value="0">Disabled (Loop Current)</option>
+                <option value="5">Every 5 minutes</option>
+                <option value="10">Every 10 minutes</option>
+                <option value="15" selected>Every 15 minutes</option>
+                <option value="30">Every 30 minutes</option>
+                <option value="60">Every 1 hour</option>
+              </select>
+            </div>
+            <div class="quick-card">
+              <span class="quick-card-title">Desktop Fit Mode</span>
+              <select id="quickFitSelect" class="select-control">
+                <option value="cover" selected>Cover (Zoom to Fill)</option>
+                <option value="contain">Contain (Fit Aspect Ratio)</option>
+                <option value="fill">Fill (Stretch to Fit)</option>
+              </select>
+            </div>
+            <div class="quick-card">
+              <span class="quick-card-title">Desktop Focus Mode</span>
+              <select id="quickFocusModeSelect" class="select-control">
+                <option value="focus" selected>Smart Pause (App In Focus)</option>
+                <option value="always">Always Play (Continuous)</option>
+              </select>
+            </div>
+            <div class="quick-card">
+              <span class="quick-card-title">Library Overview</span>
+              <div style="font-size: 13px; color: var(--text-secondary);">
+                <strong id="statVideoCount" style="color: var(--text-primary); font-size: 16px;">0</strong> videos detected in
+                <strong id="statFolderCount" style="color: var(--text-primary);">0</strong> folders
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. WALLPAPERS LIBRARY VIEW -->
+      <section id="view-wallpapers" class="view">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Wallpaper Library</h1>
+            <p class="page-subtitle">Add folders and choose your live desktop wallpapers</p>
+          </div>
+          <div class="header-actions">
+            <button id="btnAddFolder" class="btn btn-primary">
+              <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              <span>Add Folder</span>
+            </button>
+            <button id="btnRescan" class="btn btn-secondary">
+              <svg id="rescanIcon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Rescan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Folder Pills -->
+        <div id="folderChips" class="folder-chips-container"></div>
+
+        <!-- Filter Toolbar -->
+        <div class="library-toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchInput" type="text" class="search-input" placeholder="Search wallpapers...">
+          </div>
+          <div class="filter-group">
+            <select id="folderFilter" class="select-control">
+              <option value="all">All Folders</option>
+            </select>
+            <select id="sortSelect" class="select-control">
+              <option value="name">Sort by Name</option>
+              <option value="date">Sort by Date</option>
+              <option value="size">Sort by Size</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Wallpaper Grid -->
+        <div id="wallpaperGrid" class="wallpaper-grid"></div>
+
+        <!-- Empty State -->
+        <div id="libraryEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="empty-state-title">No Wallpapers Found</h2>
+          <p class="empty-state-desc">Select a folder containing video files (.mp4, .webm, .mkv) to start enjoying live wallpapers.</p>
+          <button id="btnEmptyAddFolder" class="btn btn-primary">
+            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            <span>Add Folder Now</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 3. SETTINGS VIEW -->
+      <section id="view-settings" class="view">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Configure application, wallpaper playback, and system behavior</p>
+          </div>
+          <div class="header-actions">
+            <button id="btnResetSettings" class="btn btn-secondary">Reset Defaults</button>
+            <button id="btnSaveSettings" class="btn btn-primary">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="settings-container">
+          <!-- General -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>General Settings</span>
+            </h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Start Wally with Windows</span>
+                <span class="setting-desc">Automatically launch Wally when your computer boots up</span>
+              </div>
+              <label class="switch">
+                <input id="setStartWithWindows" type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Start Minimized to System Tray</span>
+                <span class="setting-desc">Do not pop up main window when starting Wally</span>
+              </div>
+              <label class="switch">
+                <input id="setStartMinimized" type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Start Wallpaper Automatically</span>
+                <span class="setting-desc">Immediately activate the last live wallpaper on launch</span>
+              </div>
+              <label class="switch">
+                <input id="setStartAuto" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Remember Last Played Wallpaper</span>
+                <span class="setting-desc">Save active wallpaper state between sessions</span>
+              </div>
+              <label class="switch">
+                <input id="setRememberLast" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Wallpaper Playback -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Wallpaper & Playback</span>
+            </h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Auto-Change Interval</span>
+                <span class="setting-desc">How frequently to advance to the next wallpaper</span>
+              </div>
+              <select id="setIntervalMins" class="select-control">
+                <option value="0">Disabled (Loop Current)</option>
+                <option value="5">Every 5 minutes</option>
+                <option value="10">Every 10 minutes</option>
+                <option value="15">Every 15 minutes</option>
+                <option value="30">Every 30 minutes</option>
+                <option value="60">Every 1 hour</option>
+                <option value="custom">Custom interval</option>
+              </select>
+            </div>
+            <div id="customIntervalRow" class="setting-row" style="display: none;">
+              <div class="setting-info">
+                <span class="setting-label">Custom Interval (Minutes)</span>
+                <span class="setting-desc">Enter a custom time between 1 and 1440 minutes</span>
+              </div>
+              <input id="setCustomMins" type="number" min="1" max="1440" value="20" class="select-control" style="width: 100px;">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Wallpaper Fit Mode</span>
+                <span class="setting-desc">How videos are rendered across your desktop resolution</span>
+              </div>
+              <select id="setFitMode" class="select-control">
+                <option value="cover">Cover (Fill screen without black bars)</option>
+                <option value="contain">Contain (Preserve aspect ratio)</option>
+                <option value="fill">Fill (Stretch completely)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Mute Audio by Default</span>
+                <span class="setting-desc">Keep wallpaper videos silent on startup</span>
+              </div>
+              <label class="switch">
+                <input id="setMuteByDefault" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Play Video Only When Desktop Is In Focus</span>
+                <span class="setting-desc">Sets video thumbnail picture as desktop background and plays video only when entering the desktop</span>
+              </div>
+              <label class="switch">
+                <input id="setPlayOnlyFocused" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Appearance -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">
+              <svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+              <span>Appearance</span>
+            </h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Interface Theme</span>
+                <span class="setting-desc">Select dark or light color scheme</span>
+              </div>
+              <select id="setTheme" class="select-control">
+                <option value="dark">Dark Theme (Default)</option>
+                <option value="light">Light Theme</option>
+                <option value="system">Follow Windows System Theme</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Performance -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">
+              <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Performance</span>
+            </h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Hardware Video Acceleration</span>
+                <span class="setting-desc">Uses GPU to decode videos smoothly on modern PCs</span>
+              </div>
+              <label class="switch">
+                <input id="setHwAccel" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Pause on Battery</span>
+                <span class="setting-desc">Conserves battery life when unplugged on laptops</span>
+              </div>
+              <label class="switch">
+                <input id="setPauseBattery" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Reduce UI Animations</span>
+                <span class="setting-desc">Disables transitions to maximize responsiveness on older PCs</span>
+              </div>
+              <label class="switch">
+                <input id="setReduceAnim" type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. ABOUT VIEW -->
+      <section id="view-about" class="view">
+        <div class="about-card">
+          <div class="about-logo" style="background: transparent; box-shadow: none;">
+            <img src="../assets/icons/icon.png" width="96" height="96" style="filter: drop-shadow(0 10px 25px rgba(168, 85, 247, 0.55));" alt="Wally Flower Logo">
+          </div>
+          <h2 class="about-title">Wally</h2>
+          <span class="about-version">Version 1.0.0</span>
+          <p class="about-desc">
+            A modern, lightweight Windows live wallpaper application built from scratch.
+            Wally embeds your favorite video clips seamlessly behind your desktop icons with genuine Win32 WorkerW parenting, hardware acceleration, and zero bloat.
+          </p>
+
+          <div class="about-system-specs">
+            <div class="spec-row">
+              <span class="spec-name">Platform</span>
+              <span id="specPlatform" class="spec-val">Windows 10/11 x64</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-name">Live Wallpaper Host</span>
+              <span class="spec-val">Win32 WorkerW (Native Child)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-name">Video Decoder</span>
+              <span class="spec-val">Chromium GPU Hardware Accelerated</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-name">Electron Engine</span>
+              <span id="specElectron" class="spec-val">33.2.1</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-name">Node Runtime</span>
+              <span id="specNode" class="spec-val">24.19.0</span>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button id="btnOpenGitHub" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              <span>GitHub Repository</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Video Preview Modal Dialog -->
+  <div id="previewModal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="modalVideoTitle" class="modal-title">Video Preview</h3>
+        <button id="btnModalClose" class="modal-close-btn" title="Close Preview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <video id="modalVideo" class="modal-video" controls autoplay playsinline></video>
+      </div>
+      <div class="modal-footer">
+        <span id="modalVideoMeta" style="font-size: 12px; color: var(--text-muted);">MP4 Video</span>
+        <div class="header-actions">
+          <button id="btnModalSetWallpaper" class="btn btn-primary">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Set as Live Wallpaper</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/state.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

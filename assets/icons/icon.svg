@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="petalGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="55%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+
+  <g id="flower" transform="translate(256, 256)">
+    <!-- 5 Clean Minimalist Petals -->
+    <path d="M 0 0 C -70 -50, -60 -195, 0 -220 C 60 -195, 70 -50, 0 0 Z" fill="url(#petalGrad)" />
+    <path d="M 0 0 C -70 -50, -60 -195, 0 -220 C 60 -195, 70 -50, 0 0 Z" fill="url(#petalGrad)" transform="rotate(72)" />
+    <path d="M 0 0 C -70 -50, -60 -195, 0 -220 C 60 -195, 70 -50, 0 0 Z" fill="url(#petalGrad)" transform="rotate(144)" />
+    <path d="M 0 0 C -70 -50, -60 -195, 0 -220 C 60 -195, 70 -50, 0 0 Z" fill="url(#petalGrad)" transform="rotate(216)" />
+    <path d="M 0 0 C -70 -50, -60 -195, 0 -220 C 60 -195, 70 -50, 0 0 Z" fill="url(#petalGrad)" transform="rotate(288)" />
+
+    <!-- Clean Crisp Center Core -->
+    <circle cx="0" cy="0" r="44" fill="#ffffff" />
+  </g>
+</svg>
