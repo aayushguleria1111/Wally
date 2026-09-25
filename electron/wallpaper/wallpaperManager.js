@@ -12,10 +12,12 @@ class WallpaperManager {
     this.attacherPath = null;
     this.isAttached = false;
     this.intervalTimer = null;
+    this.heartbeatTimer = null;
+    this.targetChangeTimestamp = 0;
     this.history = [];
     this.currentIndex = -1;
     this.currentVideoMetadata = null;
-    this.isDesktopFocused = false;
+    this.isDesktopFocused = true;
     this.focusWatcherProcess = null;
     this.onStateChangeCallbacks = new Set();
     this.recentCrashTimestamps = [];
@@ -275,8 +277,29 @@ class WallpaperManager {
     }
   }
 
+  getRemainingSeconds() {
+    const playback = storageService.get('playback') || {};
+    const mins = Number(playback.intervalMinutes) || 0;
+    if (mins <= 0 || !playback.isPlaying || !this.wallpaperWindow || this.wallpaperWindow.isDestroyed()) {
+      return 0;
+    }
+    if (!this.targetChangeTimestamp) {
+      return Math.round(mins * 60);
+    }
+    return Math.max(0, Math.ceil((this.targetChangeTimestamp - Date.now()) / 1000));
+  }
+
   getState() {
-    const config = storageService.get();
+    const config = storageService.get() || {};
+    const playback = config.playback || {};
+    const mins = Number(playback.intervalMinutes) || 0;
+    const isTimerActive = Boolean(
+      this.wallpaperWindow &&
+      !this.wallpaperWindow.isDestroyed() &&
+      playback.isPlaying &&
+      mins > 0
+    );
+
     return {
       currentWallpaper: config.currentWallpaper,
       currentVideoMetadata: this.currentVideoMetadata,
@@ -284,7 +307,12 @@ class WallpaperManager {
       isDesktopFocused: this.isDesktopFocused,
       playback: config.playback,
       appearance: config.appearance,
-      performance: config.performance
+      performance: config.performance,
+      timer: {
+        intervalMinutes: mins,
+        remainingSeconds: this.getRemainingSeconds(),
+        isRunning: isTimerActive
+      }
     };
   }
 
@@ -491,19 +519,6 @@ class WallpaperManager {
     return false;
   }
 
-  applySystemDesktopWallpaper(posterPath) {
-    if (process.platform !== 'win32' || !posterPath || !fs.existsSync(posterPath)) return;
-    if (!this.attacherPath || !fs.existsSync(this.attacherPath)) return;
-
-    execFile(this.attacherPath, ['setwallpaper', posterPath], (err, stdout) => {
-      if (err) {
-        console.warn('Failed to set Windows desktop wallpaper:', err.message);
-      } else {
-        console.log('Windows system desktop wallpaper updated to video poster image:', stdout.trim());
-      }
-    });
-  }
-
   async setWallpaper(videoPath) {
     if (!videoPath || !fs.existsSync(videoPath)) {
       console.warn('Video file not found or was deleted:', videoPath);
@@ -530,22 +545,6 @@ class WallpaperManager {
     this.consecutiveMissingFiles = 0;
     storageService.setCurrentWallpaper(videoPath);
     const playback = storageService.get('playback') || {};
-
-    // 1. Asynchronously extract/set Windows desktop wallpaper to video thumbnail picture
-    const videoObj = scanService.getCachedVideos().find(v => v.path === videoPath) || {
-      id: scanService.getVideoId(videoPath),
-      name: path.parse(videoPath).name,
-      filename: path.basename(videoPath),
-      path: videoPath
-    };
-
-    thumbnailService.ensureWallpaperPoster(videoObj).then(posterPath => {
-      if (posterPath && fs.existsSync(posterPath)) {
-        this.applySystemDesktopWallpaper(posterPath);
-      }
-    }).catch(err => {
-      console.warn('Poster generation for system wallpaper error:', err.message);
-    });
 
     if (!this.wallpaperWindow || this.wallpaperWindow.isDestroyed()) {
       this.createWindow();
@@ -586,6 +585,7 @@ class WallpaperManager {
       if (!playback.playOnlyWhenDesktopFocused || this.isDesktopFocused) {
         this.sendVideoPlayPause(true);
       }
+      this.startIntervalTimer();
     } else {
       const curr = storageService.get('currentWallpaper');
       if (curr) this.setWallpaper(curr);
@@ -601,6 +601,7 @@ class WallpaperManager {
     if (this.wallpaperWindow && !this.wallpaperWindow.isDestroyed()) {
       this.sendVideoPlayPause(false);
     }
+    this.stopIntervalTimer();
     this.broadcastState();
   }
 
@@ -688,11 +689,18 @@ class WallpaperManager {
     const library = scanService.getCachedVideos();
     if (!library || library.length === 0) return;
 
-    const playback = storageService.get('playback');
+    if (library.length === 1) {
+      this.setWallpaper(library[0].path);
+      return;
+    }
+
+    const playback = storageService.get('playback') || {};
     let nextVideo = null;
+    const currentPath = storageService.get('currentWallpaper');
+    const normCurrent = currentPath ? path.normalize(currentPath).toLowerCase() : '';
 
     if (playback.shuffle) {
-      const remaining = library.filter(v => v.path !== storageService.get('currentWallpaper'));
+      const remaining = library.filter(v => path.normalize(v.path).toLowerCase() !== normCurrent);
       if (remaining.length > 0) {
         const randIndex = Math.floor(Math.random() * remaining.length);
         nextVideo = remaining[randIndex];
@@ -700,13 +708,13 @@ class WallpaperManager {
         nextVideo = library[0];
       }
     } else {
-      const currentPath = storageService.get('currentWallpaper');
-      const idx = library.findIndex(v => v.path === currentPath);
-      const nextIdx = (idx + 1) % library.length;
+      const idx = library.findIndex(v => path.normalize(v.path).toLowerCase() === normCurrent);
+      const nextIdx = idx >= 0 ? (idx + 1) % library.length : 0;
       nextVideo = library[nextIdx];
     }
 
     if (nextVideo) {
+      console.log(`[WallpaperManager] Advancing to next wallpaper: ${nextVideo.name}`);
       this.setWallpaper(nextVideo.path);
     }
   }
@@ -715,12 +723,19 @@ class WallpaperManager {
     const library = scanService.getCachedVideos();
     if (!library || library.length === 0) return;
 
+    if (library.length === 1) {
+      this.setWallpaper(library[0].path);
+      return;
+    }
+
     const currentPath = storageService.get('currentWallpaper');
-    const idx = library.findIndex(v => v.path === currentPath);
-    const prevIdx = (idx - 1 + library.length) % library.length;
+    const normCurrent = currentPath ? path.normalize(currentPath).toLowerCase() : '';
+    const idx = library.findIndex(v => path.normalize(v.path).toLowerCase() === normCurrent);
+    const prevIdx = idx >= 0 ? (idx - 1 + library.length) % library.length : 0;
     const prevVideo = library[prevIdx];
 
     if (prevVideo) {
+      console.log(`[WallpaperManager] Switching to previous wallpaper: ${prevVideo.name}`);
       this.setWallpaper(prevVideo.path);
     }
   }
@@ -745,32 +760,57 @@ class WallpaperManager {
 
   setIntervalMinutes(minutes) {
     const playback = storageService.get('playback');
-    playback.intervalMinutes = Math.max(0, minutes);
+    const parsed = Math.max(0, parseFloat(minutes) || 0);
+    playback.intervalMinutes = parsed;
     storageService.set('playback', playback);
+    console.log(`[WallpaperManager] Auto-change interval set to ${parsed} minutes`);
     this.startIntervalTimer();
     this.broadcastState();
   }
 
   startIntervalTimer() {
     this.stopIntervalTimer();
-    const playback = storageService.get('playback');
-    const mins = playback.intervalMinutes;
+    const playback = storageService.get('playback') || {};
+    const mins = parseFloat(playback.intervalMinutes) || 0;
 
     if (mins > 0) {
-      const ms = mins * 60 * 1000;
-      this.intervalTimer = setInterval(() => {
-        if (playback.isPlaying) {
-          this.next();
+      const ms = Math.round(mins * 60 * 1000);
+      this.targetChangeTimestamp = Date.now() + ms;
+
+      // 1-second precision heartbeat timer
+      this.heartbeatTimer = setInterval(() => {
+        const curPlayback = storageService.get('playback') || {};
+        if (!curPlayback.isPlaying || !this.wallpaperWindow || this.wallpaperWindow.isDestroyed()) {
+          return;
         }
-      }, ms);
+
+        const now = Date.now();
+        if (now >= this.targetChangeTimestamp) {
+          console.log(`[Timer] Auto-advance triggered (${mins} mins reached). Advancing to next wallpaper.`);
+          this.next();
+        } else {
+          // Send periodic tick update every 5 seconds or when nearing 5s
+          const remaining = Math.max(0, Math.ceil((this.targetChangeTimestamp - now) / 1000));
+          if (remaining % 5 === 0 || remaining <= 5) {
+            this.broadcastState();
+          }
+        }
+      }, 1000);
+    } else {
+      this.targetChangeTimestamp = 0;
     }
   }
 
   stopIntervalTimer() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
     if (this.intervalTimer) {
       clearInterval(this.intervalTimer);
       this.intervalTimer = null;
     }
+    this.targetChangeTimestamp = 0;
   }
 
   destroy() {

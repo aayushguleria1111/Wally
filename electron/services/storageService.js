@@ -18,7 +18,7 @@ class StorageService {
         shuffle: false,
         intervalMinutes: 15,
         fitMode: 'cover',
-        playOnlyWhenDesktopFocused: true // Play video only when desktop is in focus
+        playOnlyWhenDesktopFocused: false // Continuous play by default; user can enable focus-pause in settings
       },
       general: {
         startWithWindows: false,
@@ -30,7 +30,7 @@ class StorageService {
         theme: 'dark'
       },
       performance: {
-        hardwareAcceleration: true,
+        hardwareAcceleration: false,
         pauseWhenFullscreen: true,
         pauseOnBattery: true,
         reduceAnimations: false

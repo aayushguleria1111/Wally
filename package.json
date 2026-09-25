@@ -1,7 +1,7 @@
 {
-  "name": "wally",
-  "version": "1.0.0",
-  "description": "Modern Windows Live Wallpaper Application",
+  "name": "wally-live-wallpapers",
+  "version": "1.0.1",
+  "description": "Wally-Live Wallpapers - Modern Windows Live Wallpaper Application",
   "main": "electron/main.js",
   "author": "Aayush Guleria",
   "license": "MIT",
@@ -10,33 +10,41 @@
     "url": "https://github.com/aayushguleria1111/Wally.git"
   },
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --enable-logging",
+    "start": "electron . --disable-gpu --no-sandbox",
+    "dev": "electron . --enable-logging --disable-gpu --no-sandbox",
+    "test": "node test/test-suite.js",
     "build:native": "node scripts/build-native.js",
     "generate:icons": "node scripts/generate-icons.js",
     "pack": "npm run build:native && electron-builder --dir",
-    "dist": "npm run build:native && electron-builder --win --x64"
+    "dist": "node scripts/build-installer.js"
   },
   "build": {
-    "appId": "com.wally.livewallpaper",
-    "productName": "Wally",
-    "copyright": "Copyright © 2026 Wally",
+    "appId": "com.wally.livewallpapers",
+    "productName": "Wally-Live Wallpapers",
+    "copyright": "Copyright © 2026 Wally-Live Wallpapers",
     "directories": {
       "output": "dist"
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
-      "icon": "assets/icons/icon.ico"
+      "icon": "assets/icons/icon.ico",
+      "artifactName": "${productName} Setup ${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Wally Live Wallpaper"
+      "shortcutName": "Wally-Live Wallpapers",
+      "differentialPackage": false,
+      "artifactName": "${productName} Setup ${version}.${ext}"
     },
     "extraResources": [
       {

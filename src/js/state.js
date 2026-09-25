@@ -18,6 +18,11 @@ const State = {
     fitMode: 'cover',
     playOnlyWhenDesktopFocused: true
   },
+  timer: {
+    intervalMinutes: 15,
+    remainingSeconds: 0,
+    isRunning: false
+  },
   settings: null,
   filter: {
     query: '',
@@ -47,6 +52,7 @@ const State = {
     if (patch.currentVideoMetadata !== undefined) this.currentVideoMetadata = patch.currentVideoMetadata;
     if (patch.isActive !== undefined) this.isActive = patch.isActive;
     if (patch.isDesktopFocused !== undefined) this.isDesktopFocused = patch.isDesktopFocused;
+    if (patch.timer !== undefined) this.timer = { ...this.timer, ...patch.timer };
     if (patch.playback) {
       this.playback = { ...this.playback, ...patch.playback };
     }

@@ -78,6 +78,39 @@ async function run() {
   assert.ok(fs.existsSync(trayPng), 'tray.png exists');
   console.log('  ✓ All required Windows icons exist (icon.ico, icon.png, tray.png)');
 
+  // 5. Test Package Metadata (Wally-Live Wallpapers v1.0.1)
+  console.log('4. Testing Package Metadata & Version 1.0.1...');
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  assert.strictEqual(pkg.name, 'wally-live-wallpapers');
+  assert.strictEqual(pkg.version, '1.0.1');
+  assert.strictEqual(pkg.build.productName, 'Wally-Live Wallpapers');
+  assert.strictEqual(pkg.build.nsis.shortcutName, 'Wally-Live Wallpapers');
+  console.log('  ✓ App name is correctly set to "Wally-Live Wallpapers" and version to 1.0.1');
+
+  // 6. Test StartupService
+  console.log('5. Testing StartupService...');
+  const startupService = require('../electron/services/startupService');
+  assert.strictEqual(startupService.keyName, 'Wally-Live Wallpapers');
+  assert.ok(typeof startupService.getExecutableCommand === 'function');
+  const normalCmd = startupService.getExecutableCommand(false);
+  const minCmd = startupService.getExecutableCommand(true);
+  assert.ok(normalCmd.length > 0, 'Command should not be empty');
+  assert.ok(minCmd.includes('--minimized'), 'Minimized command should contain --minimized');
+  console.log('  ✓ StartupService properly generates Windows startup commands');
+
+  // 7. Test StorageService deepMerge and schema
+  console.log('6. Testing StorageService...');
+  const storageService = require('../electron/services/storageService');
+  const merged = storageService.deepMerge(storageService.defaultSettings, {
+    playback: { intervalMinutes: 2, shuffle: true },
+    general: { startWithWindows: true }
+  });
+  assert.strictEqual(merged.playback.intervalMinutes, 2);
+  assert.strictEqual(merged.playback.shuffle, true);
+  assert.strictEqual(merged.general.startWithWindows, true);
+  assert.strictEqual(merged.appearance.theme, 'dark'); // Retains default
+  console.log('  ✓ StorageService deepMerge and default settings integrity verified');
+
   console.log('\n========================================');
   console.log(' ALL AUTOMATED TESTS PASSED SUCCESSFULLY! ✓');
   console.log('========================================');

@@ -7,6 +7,7 @@ class ThumbnailService {
     this.cacheDir = null;
     this.postersDir = null;
     this.generatorWindow = null;
+    this.queue = Promise.resolve();
   }
 
   init() {
@@ -222,18 +223,30 @@ class ThumbnailService {
   }
 
   async captureThumbnail(video) {
-    const res = await this.captureThumbnailAndPoster(video);
-    return res.thumbnailUrl;
+    if (!video || !video.id) return null;
+    const thumbPath = this.getThumbnailPath(video.id);
+    if (fs.existsSync(thumbPath)) {
+      return `file://${thumbPath.replace(/\\/g, '/')}`;
+    }
+
+    // Queue requests sequentially so thumbnail generation doesn't overload GPU or freeze renderer
+    return new Promise((resolve) => {
+      this.queue = this.queue.then(async () => {
+        try {
+          const res = await this.captureThumbnailAndPoster(video);
+          resolve(res.thumbnailUrl);
+        } catch (err) {
+          resolve(this.generateDefaultSvg(video.filename || 'video'));
+        }
+      }).catch(() => {
+        resolve(this.generateDefaultSvg(video.filename || 'video'));
+      });
+    });
   }
 
   async ensureWallpaperPoster(video) {
-    if (!this.postersDir) this.init();
-    const posterPath = this.getPosterPath(video.id);
-    if (fs.existsSync(posterPath)) {
-      return posterPath;
-    }
-    const res = await this.captureThumbnailAndPoster(video);
-    return res.posterPath;
+    // Return null: Live wallpaper uses direct video playback; static wallpaper poster is disabled
+    return null;
   }
 
   destroy() {

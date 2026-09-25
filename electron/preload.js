@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('wallyApi', {
     setShuffle: (shuffle) => ipcRenderer.invoke('playback:set-shuffle', shuffle),
     setFit: (fitMode) => ipcRenderer.invoke('playback:set-fit', fitMode),
     setInterval: (minutes) => ipcRenderer.invoke('playback:set-interval', minutes),
+    changeNow: () => ipcRenderer.invoke('playback:change-now'),
     setPlayWhenFocused: (enabled) => ipcRenderer.invoke('playback:set-play-when-focused', enabled)
   },
   settings: {

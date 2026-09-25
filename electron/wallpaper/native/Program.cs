@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace Wally.Native
 {
@@ -259,6 +260,86 @@ namespace Wally.Native
                     RunFocusLoop(wallyPid, wallpaperHwnd, intervalMs);
                     return 0;
                 }
+                else if (action == "setstartup")
+                {
+                    if (args.Length < 2)
+                    {
+                        Console.Error.WriteLine("Missing command argument.");
+                        return 1;
+                    }
+
+                    string command = args[1];
+                    try
+                    {
+                        using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
+                        {
+                            if (key != null)
+                            {
+                                string[] legacyNames = new string[] { "wally-live-wallpapers", "Wally", "com.wally.livewallpapers", "electron" };
+                                foreach (string legacy in legacyNames)
+                                {
+                                    try { key.DeleteValue(legacy, false); } catch {}
+                                }
+
+                                key.SetValue("Wally-Live Wallpapers", command, RegistryValueKind.String);
+                                Console.WriteLine("SUCCESS: Registered Windows startup key.");
+                                return 0;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine("Registry write error: " + ex.Message);
+                        return 5;
+                    }
+                    return 1;
+                }
+                else if (action == "removestartup")
+                {
+                    try
+                    {
+                        using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true))
+                        {
+                            if (key != null)
+                            {
+                                string[] allNames = new string[] { "Wally-Live Wallpapers", "wally-live-wallpapers", "Wally", "com.wally.livewallpapers", "electron" };
+                                foreach (string name in allNames)
+                                {
+                                    try { key.DeleteValue(name, false); } catch {}
+                                }
+                                Console.WriteLine("SUCCESS: Removed Windows startup key.");
+                                return 0;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine("Registry delete error: " + ex.Message);
+                        return 5;
+                    }
+                    return 1;
+                }
+                else if (action == "isstartup")
+                {
+                    try
+                    {
+                        using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false))
+                        {
+                            if (key != null)
+                            {
+                                object val = key.GetValue("Wally-Live Wallpapers") ?? key.GetValue("wally-live-wallpapers");
+                                if (val != null)
+                                {
+                                    Console.WriteLine(val.ToString());
+                                    return 0;
+                                }
+                            }
+                        }
+                    }
+                    catch {}
+                    Console.WriteLine("NOT_FOUND");
+                    return 1;
+                }
                 else
                 {
                     Console.Error.WriteLine(string.Format("Unknown action: {0}", action));
@@ -308,14 +389,34 @@ namespace Wally.Native
             }
 
             // 2. If the user is currently focused on Wally's application window
-            if (wallyPid > 0)
+            uint fgPid = 0;
+            GetWindowThreadProcessId(fg, out fgPid);
+            if (fgPid > 0)
             {
-                uint fgPid = 0;
-                GetWindowThreadProcessId(fg, out fgPid);
-                if (fgPid == wallyPid)
+                if (wallyPid > 0 && fgPid == wallyPid)
                 {
                     return true;
                 }
+
+                try
+                {
+                    Process proc = Process.GetProcessById((int)fgPid);
+                    string procName = proc.ProcessName.ToLowerInvariant();
+                    if (procName.Contains("wally") || procName.Contains("electron"))
+                    {
+                        return true;
+                    }
+                }
+                catch {}
+            }
+
+            // Check if active window title belongs to Wally
+            StringBuilder sbTitle = new StringBuilder(256);
+            GetWindowText(fg, sbTitle, 256);
+            string winTitle = sbTitle.ToString();
+            if (!string.IsNullOrEmpty(winTitle) && winTitle.ToLowerInvariant().Contains("wally"))
+            {
+                return true;
             }
 
             // 3. If the foreground window is our wallpaper window or shell desktop
@@ -368,7 +469,7 @@ namespace Wally.Native
                 }
                 else
                 {
-                    StringBuilder sbTitle = new StringBuilder(256);
+                    sbTitle.Length = 0;
                     GetWindowText(fg, sbTitle, 256);
                     string title = sbTitle.ToString();
                     if (title == "Start" || title == "Windows Shell Experience Host" || title == "")

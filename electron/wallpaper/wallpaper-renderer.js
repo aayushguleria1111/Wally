@@ -49,12 +49,28 @@
     }
   }
 
+  function safePlay(vid) {
+    if (!vid) return;
+    const p = vid.play();
+    if (p !== undefined) {
+      p.catch((err) => {
+        // If playback failed due to audio policy, mute and retry
+        if (!vid.muted) {
+          vid.muted = true;
+          vid.play().catch((e) => console.warn('Muted playback retry failed:', e));
+        } else {
+          console.warn('Video play interrupted or waiting for data:', err.message);
+        }
+      });
+    }
+  }
+
   function setPlayPause(play) {
     isPlaying = Boolean(play);
-    const active = currentVideo;
+    const active = currentVideo || nextVideo || videoA;
     if (active) {
       if (isPlaying) {
-        active.play().catch(err => console.warn('Play error:', err));
+        safePlay(active);
       } else {
         active.pause();
       }
@@ -84,7 +100,7 @@
 
   function onLoadedMetadata(e) {
     const video = e.target;
-    if (video === nextVideo) {
+    if (video === nextVideo || video === currentVideo) {
       if (window.wallpaperApi) {
         window.wallpaperApi.notifyVideoLoaded({
           duration: video.duration,
@@ -111,6 +127,8 @@
     const oldVideo = currentVideo;
 
     nextVideo = targetVideo;
+    currentVideo = targetVideo; // Immediately register as current video
+
     targetVideo.loop = isLooping;
     targetVideo.muted = isMuted;
     targetVideo.volume = volume;
@@ -119,47 +137,43 @@
     const formattedPath = videoPath.replace(/\\/g, '/');
     const fileUrl = formattedPath.startsWith('file://') ? formattedPath : `file://${formattedPath}`;
 
+    // Clean up previous event listeners on target
+    targetVideo.onplaying = null;
+    targetVideo.oncanplay = null;
+
+    targetVideo.onplaying = () => {
+      targetVideo.classList.remove('standby');
+      targetVideo.classList.add('active');
+
+      if (oldVideo && oldVideo !== targetVideo) {
+        oldVideo.classList.remove('active');
+        oldVideo.classList.add('standby');
+        setTimeout(() => {
+          if (currentVideo !== oldVideo) {
+            oldVideo.pause();
+            oldVideo.removeAttribute('src');
+            oldVideo.load();
+          }
+        }, 600);
+      }
+      nextVideo = null;
+    };
+
+    targetVideo.oncanplay = () => {
+      if (isPlaying) {
+        safePlay(targetVideo);
+      } else {
+        targetVideo.pause();
+      }
+    };
+
     targetVideo.src = fileUrl;
     targetVideo.load();
 
-    const playPromise = targetVideo.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
-        targetVideo.classList.remove('standby');
-        targetVideo.classList.add('active');
-
-        if (oldVideo) {
-          oldVideo.classList.remove('active');
-          oldVideo.classList.add('standby');
-          setTimeout(() => {
-            if (currentVideo !== oldVideo) {
-              oldVideo.pause();
-              oldVideo.removeAttribute('src');
-              oldVideo.load();
-            }
-          }, 600);
-        }
-
-        currentVideo = targetVideo;
-        nextVideo = null;
-
-        // If it shouldn't be playing initially (e.g. desktop not in focus)
-        if (!isPlaying) {
-          targetVideo.pause();
-        }
-      }).catch(err => {
-        console.warn('Autoplay failed or interrupted:', err);
-        if (!targetVideo.muted) {
-          targetVideo.muted = true;
-          targetVideo.play().then(() => {
-            if (!isPlaying) targetVideo.pause();
-          }).catch(e => {
-            if (window.wallpaperApi) {
-              window.wallpaperApi.notifyVideoError(e.message);
-            }
-          });
-        }
-      });
+    if (isPlaying) {
+      safePlay(targetVideo);
+    } else {
+      targetVideo.pause();
     }
   }
 

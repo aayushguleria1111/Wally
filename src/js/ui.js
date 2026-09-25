@@ -43,8 +43,14 @@ const UI = {
       volumeText: document.getElementById('volumeText'),
       btnStopWallpaper: document.getElementById('btnStopWallpaper'),
 
-      // Quick Settings
+      // Quick Settings & Auto-Advance Timer
       quickIntervalSelect: document.getElementById('quickIntervalSelect'),
+      quickCustomRow: document.getElementById('quickCustomRow'),
+      quickCustomMins: document.getElementById('quickCustomMins'),
+      btnQuickApplyCustom: document.getElementById('btnQuickApplyCustom'),
+      timerCountdownBadge: document.getElementById('timerCountdownBadge'),
+      btnQuickChangeNow: document.getElementById('btnQuickChangeNow'),
+      settingsTimerBadge: document.getElementById('settingsTimerBadge'),
       quickFitSelect: document.getElementById('quickFitSelect'),
       quickFocusModeSelect: document.getElementById('quickFocusModeSelect'),
       statVideoCount: document.getElementById('statVideoCount'),
@@ -120,6 +126,13 @@ const UI = {
       item.classList.toggle('active', item.dataset.view === viewName);
     });
     State.setActiveView(viewName);
+  },
+
+  formatTimerSeconds(totalSeconds) {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   },
 
   updateDashboard() {
@@ -227,9 +240,57 @@ const UI = {
     this.elements.heroMuteIcon.innerHTML = muteIconSvg;
     this.elements.miniMuteIcon.innerHTML = muteIconSvg;
 
-    // Quick Selectors
-    this.elements.quickIntervalSelect.value = String(playback.intervalMinutes ?? 15);
-    this.elements.quickFitSelect.value = playback.fitMode || 'cover';
+    // Synchronize Interval Selectors and Live Countdown
+    const intervalVal = playback.intervalMinutes !== undefined ? playback.intervalMinutes : 15;
+    const presetValues = [0, 0.5, 1, 2, 5, 10, 15, 30, 60];
+    const isPreset = presetValues.includes(intervalVal);
+
+    if (this.elements.quickIntervalSelect) {
+      this.elements.quickIntervalSelect.value = isPreset ? String(intervalVal) : 'custom';
+    }
+    if (this.elements.setIntervalMins) {
+      this.elements.setIntervalMins.value = isPreset ? String(intervalVal) : 'custom';
+    }
+    if (this.elements.quickCustomRow) {
+      this.elements.quickCustomRow.style.display = isPreset ? 'none' : 'flex';
+    }
+    if (this.elements.customIntervalRow) {
+      this.elements.customIntervalRow.style.display = isPreset ? 'none' : 'flex';
+    }
+    if (!isPreset) {
+      if (this.elements.quickCustomMins) this.elements.quickCustomMins.value = intervalVal;
+      if (this.elements.setCustomMins) this.elements.setCustomMins.value = intervalVal;
+    }
+
+    // Update Live Countdown Badges
+    const timerInfo = State.timer || {};
+    let badgeClass = 'timer-pill off';
+    let badgeText = '⏱ Auto-Change: Off';
+
+    if (intervalVal <= 0 || !isActive) {
+      badgeClass = 'timer-pill off';
+      badgeText = '⏱ Auto-Change: Off';
+    } else if (!playback.isPlaying) {
+      badgeClass = 'timer-pill paused';
+      badgeText = '⏱ Auto-Change: Paused';
+    } else {
+      badgeClass = 'timer-pill';
+      const remaining = typeof timerInfo.remainingSeconds === 'number' ? timerInfo.remainingSeconds : Math.round(intervalVal * 60);
+      badgeText = `⏱ Next change in: ${this.formatTimerSeconds(remaining)}`;
+    }
+
+    if (this.elements.timerCountdownBadge) {
+      this.elements.timerCountdownBadge.className = badgeClass;
+      this.elements.timerCountdownBadge.textContent = badgeText;
+    }
+    if (this.elements.settingsTimerBadge) {
+      this.elements.settingsTimerBadge.className = badgeClass;
+      this.elements.settingsTimerBadge.textContent = badgeText;
+    }
+
+    if (this.elements.quickFitSelect) {
+      this.elements.quickFitSelect.value = playback.fitMode || 'cover';
+    }
     if (this.elements.quickFocusModeSelect) {
       this.elements.quickFocusModeSelect.value = playback.playOnlyWhenDesktopFocused ? 'focus' : 'always';
     }
@@ -370,66 +431,67 @@ const UI = {
     const appearance = settings.appearance || {};
     const perf = settings.performance || {};
 
-    this.elements.setStartWithWindows.checked = Boolean(general.startWithWindows);
-    this.elements.setStartMinimized.checked = Boolean(general.startMinimized);
-    this.elements.setStartAuto.checked = Boolean(general.startWallpaperAuto);
-    this.elements.setRememberLast.checked = Boolean(general.rememberLastWallpaper);
+    if (this.elements.setStartWithWindows) this.elements.setStartWithWindows.checked = Boolean(general.startWithWindows);
+    if (this.elements.setStartMinimized) this.elements.setStartMinimized.checked = Boolean(general.startMinimized);
+    if (this.elements.setStartAuto) this.elements.setStartAuto.checked = Boolean(general.startWallpaperAuto);
+    if (this.elements.setRememberLast) this.elements.setRememberLast.checked = Boolean(general.rememberLastWallpaper);
 
     const intervalVal = playback.intervalMinutes !== undefined ? playback.intervalMinutes : 15;
-    if ([0, 5, 10, 15, 30, 60].includes(intervalVal)) {
-      this.elements.setIntervalMins.value = String(intervalVal);
-      this.elements.customIntervalRow.style.display = 'none';
+    const presets = [0, 0.5, 1, 2, 5, 10, 15, 30, 60];
+    if (presets.includes(intervalVal)) {
+      if (this.elements.setIntervalMins) this.elements.setIntervalMins.value = String(intervalVal);
+      if (this.elements.customIntervalRow) this.elements.customIntervalRow.style.display = 'none';
     } else {
-      this.elements.setIntervalMins.value = 'custom';
-      this.elements.setCustomMins.value = intervalVal;
-      this.elements.customIntervalRow.style.display = 'flex';
+      if (this.elements.setIntervalMins) this.elements.setIntervalMins.value = 'custom';
+      if (this.elements.setCustomMins) this.elements.setCustomMins.value = intervalVal;
+      if (this.elements.customIntervalRow) this.elements.customIntervalRow.style.display = 'flex';
     }
 
-    this.elements.setFitMode.value = playback.fitMode || 'cover';
-    this.elements.setMuteByDefault.checked = Boolean(playback.isMuted);
-    this.elements.setShuffleDefault.checked = Boolean(playback.shuffle);
+    if (this.elements.setFitMode) this.elements.setFitMode.value = playback.fitMode || 'cover';
+    if (this.elements.setMuteByDefault) this.elements.setMuteByDefault.checked = Boolean(playback.isMuted);
+    if (this.elements.setShuffleDefault) this.elements.setShuffleDefault.checked = Boolean(playback.shuffle);
     if (this.elements.setPlayOnlyFocused) {
       this.elements.setPlayOnlyFocused.checked = playback.playOnlyWhenDesktopFocused !== false;
     }
 
-    this.elements.setTheme.value = appearance.theme || 'dark';
-    this.elements.setHwAccel.checked = perf.hardwareAcceleration !== false;
-    this.elements.setPauseBattery.checked = perf.pauseOnBattery !== false;
-    this.elements.setReduceAnim.checked = Boolean(perf.reduceAnimations);
+    if (this.elements.setTheme) this.elements.setTheme.value = appearance.theme || 'dark';
+    if (this.elements.setHwAccel) this.elements.setHwAccel.checked = perf.hardwareAcceleration !== false;
+    if (this.elements.setPauseBattery) this.elements.setPauseBattery.checked = perf.pauseOnBattery !== false;
+    if (this.elements.setReduceAnim) this.elements.setReduceAnim.checked = Boolean(perf.reduceAnimations);
 
     this.applyTheme(appearance.theme || 'dark');
   },
 
   getSettingsFromForm() {
-    const intervalSelection = this.elements.setIntervalMins.value;
+    const intervalSelection = this.elements.setIntervalMins ? this.elements.setIntervalMins.value : '15';
     let intervalMinutes = 15;
     if (intervalSelection === 'custom') {
-      intervalMinutes = Math.max(1, parseInt(this.elements.setCustomMins.value, 10) || 15);
+      intervalMinutes = Math.max(0.1, parseFloat(this.elements.setCustomMins ? this.elements.setCustomMins.value : '15') || 15);
     } else {
-      intervalMinutes = parseInt(intervalSelection, 10);
+      intervalMinutes = parseFloat(intervalSelection) || 0;
     }
 
     return {
       general: {
-        startWithWindows: this.elements.setStartWithWindows.checked,
-        startMinimized: this.elements.setStartMinimized.checked,
-        startWallpaperAuto: this.elements.setStartAuto.checked,
-        rememberLastWallpaper: this.elements.setRememberLast.checked
+        startWithWindows: this.elements.setStartWithWindows ? this.elements.setStartWithWindows.checked : false,
+        startMinimized: this.elements.setStartMinimized ? this.elements.setStartMinimized.checked : false,
+        startWallpaperAuto: this.elements.setStartAuto ? this.elements.setStartAuto.checked : true,
+        rememberLastWallpaper: this.elements.setRememberLast ? this.elements.setRememberLast.checked : true
       },
       playback: {
         intervalMinutes: intervalMinutes,
-        fitMode: this.elements.setFitMode.value,
-        isMuted: this.elements.setMuteByDefault.checked,
-        shuffle: this.elements.setShuffleDefault.checked,
+        fitMode: this.elements.setFitMode ? this.elements.setFitMode.value : 'cover',
+        isMuted: this.elements.setMuteByDefault ? this.elements.setMuteByDefault.checked : true,
+        shuffle: this.elements.setShuffleDefault ? this.elements.setShuffleDefault.checked : false,
         playOnlyWhenDesktopFocused: this.elements.setPlayOnlyFocused ? this.elements.setPlayOnlyFocused.checked : true
       },
       appearance: {
-        theme: this.elements.setTheme.value
+        theme: this.elements.setTheme ? this.elements.setTheme.value : 'dark'
       },
       performance: {
-        hardwareAcceleration: this.elements.setHwAccel.checked,
-        pauseOnBattery: this.elements.setPauseBattery.checked,
-        reduceAnimations: this.elements.setReduceAnim.checked
+        hardwareAcceleration: this.elements.setHwAccel ? this.elements.setHwAccel.checked : true,
+        pauseOnBattery: this.elements.setPauseBattery ? this.elements.setPauseBattery.checked : true,
+        reduceAnimations: this.elements.setReduceAnim ? this.elements.setReduceAnim.checked : false
       }
     };
   },

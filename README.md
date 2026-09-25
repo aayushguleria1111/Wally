@@ -1,16 +1,16 @@
-# Wally — Modern Windows Live Wallpaper Application
+# Wally-Live Wallpapers — Modern Windows Live Wallpaper Application (v1.0.1)
 
 <div align="center">
-  <img src="assets/icons/icon.png" width="96" height="96" alt="Wally Logo" />
-  <h3>Wally</h3>
-  <p><strong>A modern, lightweight Windows live wallpaper application built from scratch.</strong></p>
+  <img src="assets/icons/icon.png" width="96" height="96" alt="Wally-Live Wallpapers Logo" />
+  <h3>Wally-Live Wallpapers</h3>
+  <p><strong>A modern, lightweight Windows live wallpaper application built from scratch. Version 1.0.1</strong></p>
 </div>
 
 ---
 
 ## 🌟 Overview
 
-**Wally** is a genuine Windows live wallpaper program that allows you to turn your favorite video clips (`.mp4`, `.webm`, `.mkv`, `.mov`) into animated desktop backgrounds.
+**Wally-Live Wallpapers** is a genuine Windows live wallpaper program that allows you to turn your favorite video clips (`.mp4`, `.webm`, `.mkv`, `.mov`) into animated desktop backgrounds.
 
 Unlike tools that merely float an application window over your desktop, Wally uses a dedicated native Win32 attacher to parent an Electron hardware-accelerated video canvas directly into the Windows Shell hierarchy (`WorkerW` behind `SHELLDLL_DefView`). Your desktop icons remain **100% clickable**, normal windows stay on top, the Windows taskbar is never covered, and video rendering consumes minimal CPU/GPU.
 

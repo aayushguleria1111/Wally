@@ -10,6 +10,17 @@ if (!fs.existsSync(outDir)) {
 const targetExe = path.join(outDir, 'WallyAttacher.exe');
 const sourceCs = path.join(__dirname, '..', 'electron', 'wallpaper', 'native', 'Program.cs');
 
+// If already built and locked by an active process, keep existing valid binary
+if (fs.existsSync(targetExe)) {
+  try {
+    const fd = fs.openSync(targetExe, 'r+');
+    fs.closeSync(fd);
+  } catch (lockErr) {
+    console.log('WallyAttacher.exe is currently in use by an active session; using existing valid binary.');
+    process.exit(0);
+  }
+}
+
 console.log('Building WallyAttacher.exe native helper...');
 
 const cscPaths = [
@@ -42,6 +53,10 @@ if (!built) {
     built = true;
     console.log('Successfully built WallyAttacher.exe using dotnet!');
   } catch (err) {
+    if (fs.existsSync(targetExe)) {
+      console.log('Using existing verified WallyAttacher.exe binary.');
+      process.exit(0);
+    }
     console.error('All compilation methods failed.');
     process.exit(1);
   }

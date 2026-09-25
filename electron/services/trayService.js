@@ -37,7 +37,7 @@ class TrayService {
 
     const icon = this.getTrayIcon();
     this.tray = new Tray(icon);
-    this.tray.setToolTip('Wally Live Wallpaper');
+    this.tray.setToolTip('Wally-Live Wallpapers');
 
     this.tray.on('double-click', () => {
       this.toggleMainWindow();
@@ -79,7 +79,7 @@ class TrayService {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: `Wally Live Wallpaper`,
+        label: `Wally-Live Wallpapers v1.0.1`,
         enabled: false
       },
       {

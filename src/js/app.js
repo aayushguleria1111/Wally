@@ -105,20 +105,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     State.setPlaybackState(res);
   });
 
-  // 5. Quick Settings on Dashboard
-  UI.elements.quickIntervalSelect.addEventListener('change', async (e) => {
-    const val = parseInt(e.target.value, 10);
+  // 5. Quick Settings & Timer on Dashboard
+  async function handleIntervalChange(rawVal) {
+    if (rawVal === 'custom') {
+      if (UI.elements.quickCustomRow) UI.elements.quickCustomRow.style.display = 'flex';
+      if (UI.elements.customIntervalRow) UI.elements.customIntervalRow.style.display = 'flex';
+      return;
+    }
+    if (UI.elements.quickCustomRow) UI.elements.quickCustomRow.style.display = 'none';
+    if (UI.elements.customIntervalRow) UI.elements.customIntervalRow.style.display = 'none';
+
+    const val = parseFloat(rawVal) || 0;
     const res = await window.wallyApi.playback.setInterval(val);
     State.setPlaybackState(res);
-    UI.showToast(val === 0 ? 'Auto-change disabled' : `Changing wallpaper every ${val} minutes`, 'info');
-  });
+    UI.updateDashboard();
 
-  UI.elements.quickFitSelect.addEventListener('change', async (e) => {
-    const mode = e.target.value;
-    const res = await window.wallyApi.playback.setFit(mode);
-    State.setPlaybackState(res);
-    UI.showToast(`Wallpaper fit set to ${mode}`, 'info');
-  });
+    const desc = val === 0 ? 'Auto-change disabled' : (val < 1 ? `Changing wallpaper every ${Math.round(val * 60)} seconds` : `Changing wallpaper every ${val} minutes`);
+    UI.showToast(desc, 'info');
+  }
+
+  if (UI.elements.quickIntervalSelect) {
+    UI.elements.quickIntervalSelect.addEventListener('change', (e) => {
+      handleIntervalChange(e.target.value);
+    });
+  }
+
+  if (UI.elements.btnQuickApplyCustom) {
+    UI.elements.btnQuickApplyCustom.addEventListener('click', async () => {
+      const customVal = Math.max(0.1, parseFloat(UI.elements.quickCustomMins.value) || 1);
+      const res = await window.wallyApi.playback.setInterval(customVal);
+      State.setPlaybackState(res);
+      UI.updateDashboard();
+      UI.showToast(`Custom interval set: every ${customVal} minutes`, 'success');
+    });
+  }
+
+  if (UI.elements.btnQuickChangeNow) {
+    UI.elements.btnQuickChangeNow.addEventListener('click', async () => {
+      const res = await window.wallyApi.playback.changeNow();
+      State.setPlaybackState(res);
+      UI.updateDashboard();
+      UI.showToast('Advanced to next wallpaper', 'info');
+    });
+  }
+
+  if (UI.elements.quickFitSelect) {
+    UI.elements.quickFitSelect.addEventListener('change', async (e) => {
+      const mode = e.target.value;
+      const res = await window.wallyApi.playback.setFit(mode);
+      State.setPlaybackState(res);
+      UI.showToast(`Wallpaper fit set to ${mode}`, 'info');
+    });
+  }
 
   if (UI.elements.quickFocusModeSelect) {
     UI.elements.quickFocusModeSelect.addEventListener('change', async (e) => {
@@ -287,9 +325,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 7. Settings Handlers
-  UI.elements.setIntervalMins.addEventListener('change', (e) => {
-    UI.elements.customIntervalRow.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-  });
+  if (UI.elements.setIntervalMins) {
+    UI.elements.setIntervalMins.addEventListener('change', (e) => {
+      handleIntervalChange(e.target.value);
+    });
+  }
 
   if (UI.elements.setPlayOnlyFocused) {
     UI.elements.setPlayOnlyFocused.addEventListener('change', async (e) => {
@@ -300,19 +340,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  UI.elements.btnSaveSettings.addEventListener('click', async () => {
-    const patch = UI.getSettingsFromForm();
-    const updated = await window.wallyApi.settings.save(patch);
-    State.setSettings(updated);
-    UI.showToast('Settings saved successfully', 'success');
-  });
+  if (UI.elements.btnSaveSettings) {
+    UI.elements.btnSaveSettings.addEventListener('click', async () => {
+      try {
+        UI.elements.btnSaveSettings.disabled = true;
+        const origText = UI.elements.btnSaveSettings.textContent;
+        UI.elements.btnSaveSettings.textContent = 'Saving...';
 
-  UI.elements.btnResetSettings.addEventListener('click', async () => {
-    const defaults = await window.wallyApi.settings.reset();
-    State.setSettings(defaults);
-    UI.populateSettingsForm(defaults);
-    UI.showToast('Reset to default settings', 'info');
-  });
+        const patch = UI.getSettingsFromForm();
+        const updated = await window.wallyApi.settings.save(patch);
+        State.setSettings(updated);
+
+        // Sync fresh playback & timer state
+        const curState = await window.wallyApi.playback.getState();
+        State.setPlaybackState(curState);
+        UI.updateDashboard();
+
+        UI.elements.btnSaveSettings.textContent = 'Saved! ✓';
+        UI.showToast('Settings saved successfully', 'success');
+
+        setTimeout(() => {
+          UI.elements.btnSaveSettings.disabled = false;
+          UI.elements.btnSaveSettings.textContent = origText;
+        }, 1200);
+      } catch (err) {
+        console.error('Save settings error:', err);
+        UI.elements.btnSaveSettings.disabled = false;
+        UI.elements.btnSaveSettings.textContent = 'Save Changes';
+        UI.showToast('Failed to save settings: ' + err.message, 'error');
+      }
+    });
+  }
+
+  if (UI.elements.btnResetSettings) {
+    UI.elements.btnResetSettings.addEventListener('click', async () => {
+      try {
+        const defaults = await window.wallyApi.settings.reset();
+        State.setSettings(defaults);
+        UI.populateSettingsForm(defaults);
+        const curState = await window.wallyApi.playback.getState();
+        State.setPlaybackState(curState);
+        UI.updateDashboard();
+        UI.showToast('Reset to default settings', 'info');
+      } catch (err) {
+        UI.showToast('Failed to reset settings', 'error');
+      }
+    });
+  }
 
   // Theme switch live preview
   UI.elements.setTheme.addEventListener('change', (e) => {
@@ -380,7 +454,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (UI.elements.specNode) UI.elements.specNode.textContent = sysInfo.node || 'v24';
       if (UI.elements.specPlatform) UI.elements.specPlatform.textContent = sysInfo.os || 'Windows 11 x64';
     }
+
+    // 10. Client-side Smooth 1-Second Countdown Ticker
+    setInterval(() => {
+      if (State.timer && State.timer.isRunning && State.timer.remainingSeconds > 0) {
+        State.timer.remainingSeconds--;
+        const timeStr = UI.formatTimerSeconds(State.timer.remainingSeconds);
+        if (UI.elements.timerCountdownBadge) {
+          UI.elements.timerCountdownBadge.className = 'timer-pill';
+          UI.elements.timerCountdownBadge.textContent = `⏱ Next change in: ${timeStr}`;
+        }
+        if (UI.elements.settingsTimerBadge) {
+          UI.elements.settingsTimerBadge.className = 'timer-pill';
+          UI.elements.settingsTimerBadge.textContent = `⏱ Next change in: ${timeStr}`;
+        }
+      }
+    }, 1000);
   } catch (err) {
     console.error('Initialization error:', err);
   }
 });
+

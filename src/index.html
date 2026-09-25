@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wally - Live Wallpaper</title>
+  <title>Wally-Live Wallpapers</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
 </head>
@@ -12,8 +12,8 @@
   <header class="titlebar">
     <div class="titlebar-left">
       <img src="../assets/icons/icon.png" alt="Wally" class="titlebar-icon">
-      <span class="titlebar-title">Wally</span>
-      <span id="titlebarStatusBadge" class="titlebar-badge">Live Wallpaper</span>
+      <span class="titlebar-title">Wally-Live Wallpapers</span>
+      <span id="titlebarStatusBadge" class="titlebar-badge">v1.0.1</span>
     </div>
     <div class="titlebar-controls">
       <button id="btnMinimize" class="titlebar-btn" title="Minimize">
@@ -38,7 +38,7 @@
         </div>
         <div class="brand-info">
           <span class="brand-name">Wally</span>
-          <span class="brand-sub">Windows Live Wallpaper</span>
+          <span class="brand-sub">Live Wallpapers v1.0.1</span>
         </div>
       </div>
 
@@ -188,12 +188,24 @@
               <span class="quick-card-title">Auto-Change Interval</span>
               <select id="quickIntervalSelect" class="select-control">
                 <option value="0">Disabled (Loop Current)</option>
+                <option value="0.5">Every 30 seconds</option>
+                <option value="1">Every 1 minute</option>
+                <option value="2">Every 2 minutes</option>
                 <option value="5">Every 5 minutes</option>
                 <option value="10">Every 10 minutes</option>
                 <option value="15" selected>Every 15 minutes</option>
                 <option value="30">Every 30 minutes</option>
                 <option value="60">Every 1 hour</option>
+                <option value="custom">Custom interval...</option>
               </select>
+              <div id="quickCustomRow" class="quick-custom-row" style="display: none;">
+                <input id="quickCustomMins" type="number" min="0.1" max="1440" step="0.5" value="1" class="select-control" style="width: 80px;" placeholder="Mins">
+                <button id="btnQuickApplyCustom" class="btn btn-secondary btn-sm">Set</button>
+              </div>
+              <div class="timer-countdown-row">
+                <span id="timerCountdownBadge" class="timer-pill off">⏱ Auto-Change: Off</span>
+                <button id="btnQuickChangeNow" class="btn btn-secondary btn-sm" title="Advance to next wallpaper right now">Change Now</button>
+              </div>
             </div>
             <div class="quick-card">
               <span class="quick-card-title">Desktop Fit Mode</span>
@@ -349,10 +361,14 @@
             <div class="setting-row">
               <div class="setting-info">
                 <span class="setting-label">Auto-Change Interval</span>
-                <span class="setting-desc">How frequently to advance to the next wallpaper</span>
+                <span class="setting-desc">How frequently to advance to the next wallpaper (synchronized with Dashboard)</span>
+                <div style="margin-top: 6px;"><span id="settingsTimerBadge" class="timer-pill off">⏱ Auto-Change: Off</span></div>
               </div>
               <select id="setIntervalMins" class="select-control">
                 <option value="0">Disabled (Loop Current)</option>
+                <option value="0.5">Every 30 seconds</option>
+                <option value="1">Every 1 minute</option>
+                <option value="2">Every 2 minutes</option>
                 <option value="5">Every 5 minutes</option>
                 <option value="10">Every 10 minutes</option>
                 <option value="15">Every 15 minutes</option>
@@ -364,9 +380,9 @@
             <div id="customIntervalRow" class="setting-row" style="display: none;">
               <div class="setting-info">
                 <span class="setting-label">Custom Interval (Minutes)</span>
-                <span class="setting-desc">Enter a custom time between 1 and 1440 minutes</span>
+                <span class="setting-desc">Enter a custom time between 0.1 and 1440 minutes</span>
               </div>
-              <input id="setCustomMins" type="number" min="1" max="1440" value="20" class="select-control" style="width: 100px;">
+              <input id="setCustomMins" type="number" min="0.1" max="1440" step="0.5" value="1" class="select-control" style="width: 100px;">
             </div>
             <div class="setting-row">
               <div class="setting-info">
@@ -378,6 +394,16 @@
                 <option value="contain">Contain (Preserve aspect ratio)</option>
                 <option value="fill">Fill (Stretch completely)</option>
               </select>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Shuffle Playlist by Default</span>
+                <span class="setting-desc">Randomize wallpaper playback order when changing</span>
+              </div>
+              <label class="switch">
+                <input id="setShuffleDefault" type="checkbox">
+                <span class="slider"></span>
+              </label>
             </div>
             <div class="setting-row">
               <div class="setting-info">
@@ -466,8 +492,8 @@
           <div class="about-logo" style="background: transparent; box-shadow: none;">
             <img src="../assets/icons/icon.png" width="96" height="96" style="filter: drop-shadow(0 10px 25px rgba(168, 85, 247, 0.55));" alt="Wally Flower Logo">
           </div>
-          <h2 class="about-title">Wally</h2>
-          <span class="about-version">Version 1.0.0</span>
+          <h2 class="about-title">Wally-Live Wallpapers</h2>
+          <span class="about-version">Version 1.0.1</span>
           <p class="about-desc">
             A modern, lightweight Windows live wallpaper application built from scratch.
             Wally embeds your favorite video clips seamlessly behind your desktop icons with genuine Win32 WorkerW parenting, hardware acceleration, and zero bloat.

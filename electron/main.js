@@ -2,6 +2,7 @@ const { app, BrowserWindow, nativeTheme } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const storageService = require('./services/storageService');
+const startupService = require('./services/startupService');
 const scanService = require('./services/scanService');
 const thumbnailService = require('./services/thumbnailService');
 const trayService = require('./services/trayService');
@@ -46,10 +47,19 @@ if (!gotTheLock) {
 let mainWindow = null;
 app.isQuiting = false;
 
+// Configure Chromium flags for resilience across all Windows environments
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-gpu-process-crash-limit');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 // Pre-initialize storage to apply early flags like hardware acceleration
 storageService.init();
 const perfSettings = storageService.get('performance') || {};
-if (perfSettings.hardwareAcceleration === false) {
+
+// Disable hardware acceleration to eliminate STATUS_DLL_NOT_FOUND (exitCode: -1073741515)
+// on systems without vendor Direct3D/Vulkan GPU driver DLLs
+if (perfSettings.hardwareAcceleration !== true || process.argv.includes('--disable-gpu')) {
   app.disableHardwareAcceleration();
 }
 
@@ -90,23 +100,51 @@ async function createMainWindow() {
   // Load the UI
   mainWindow.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
 
+  const loginItem = (app && typeof app.getLoginItemSettings === 'function') 
+    ? app.getLoginItemSettings() 
+    : {};
+
+  const hasMinimizedArg = process.argv.includes('--minimized') || 
+                          process.argv.includes('--hidden') || 
+                          process.argv.includes('-m');
+
+  const isDeviceStartup = process.argv.includes('--startup') || 
+                          process.argv.includes('--login') ||
+                          Boolean(loginItem.wasOpenedAtLogin);
+
+  // When starting with device / Windows, respect the 'Start Minimized to System Tray' setting!
+  const shouldStartInTray = (isDeviceStartup && Boolean(generalSettings.startMinimized)) || 
+                            hasMinimizedArg;
+
   mainWindow.once('ready-to-show', () => {
-    if (!generalSettings.startMinimized) {
+    if (!shouldStartInTray) {
       mainWindow.show();
+    } else {
+      console.log('Wally started in system tray on device startup.');
+      mainWindow.hide();
     }
   });
 
+  // Ensure Windows startup registration is synchronized
+  if (typeof generalSettings.startWithWindows === 'boolean') {
+    startupService.setStartup(generalSettings.startWithWindows, Boolean(generalSettings.startMinimized)).catch(err => {
+      console.warn('Startup sync on launch warning:', err.message);
+    });
+  }
+
   // Renderer crash & unresponsiveness recovery
+  let renderCrashCount = 0;
   mainWindow.webContents.on('render-process-gone', (event, details) => {
     console.warn(`Main window renderer crashed: ${details.reason} (exitCode: ${details.exitCode})`);
     logCrash('mainWindow-render-process-gone', details);
-    if (!app.isQuiting && details.reason !== 'clean-exit') {
+    renderCrashCount++;
+    if (!app.isQuiting && details.reason !== 'clean-exit' && renderCrashCount <= 2) {
       setTimeout(() => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           console.log('Attempting automatic reload of main window after crash...');
           mainWindow.reload();
         }
-      }, 1000);
+      }, 1500);
     }
   });
 
@@ -144,8 +182,17 @@ async function createMainWindow() {
   }
 }
 
-app.on('second-instance', () => {
-  if (mainWindow) {
+app.on('second-instance', (event, commandLine) => {
+  // If the second instance was launched with startup / background flags, do not pop up window
+  const isBackgroundLaunch = commandLine && commandLine.some(arg => 
+    ['--minimized', '--hidden', '--startup', '-m'].includes(arg)
+  );
+  if (isBackgroundLaunch) {
+    console.log('Ignored secondary background startup launch.');
+    return;
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();

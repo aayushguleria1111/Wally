@@ -1,6 +1,7 @@
 const { ipcMain, dialog, shell, app } = require('electron');
 const fs = require('fs');
 const storageService = require('../services/storageService');
+const startupService = require('../services/startupService');
 const scanService = require('../services/scanService');
 const thumbnailService = require('../services/thumbnailService');
 const wallpaperManager = require('../wallpaper/wallpaperManager');
@@ -154,29 +155,37 @@ function registerIpcHandlers(mainWindow) {
     return wallpaperManager.getState();
   });
 
+  ipcMain.handle('playback:change-now', () => {
+    wallpaperManager.next();
+    return wallpaperManager.getState();
+  });
+
   // Settings
   ipcMain.handle('settings:get', () => {
     return storageService.get();
   });
 
-  ipcMain.handle('settings:save', (e, patch) => {
+  ipcMain.handle('settings:save', async (e, patch) => {
     const updated = storageService.update(patch);
 
-    if (patch.general && typeof patch.general.startWithWindows === 'boolean') {
-      try {
-        app.setLoginItemSettings({
-          openAtLogin: patch.general.startWithWindows,
-          openAsHidden: patch.general.startMinimized || false
-        });
-      } catch (err) {
-        console.warn('Failed to configure login item settings:', err.message);
-      }
+    if (patch.general) {
+      const general = storageService.get('general') || {};
+      const startWithWindows = typeof patch.general.startWithWindows === 'boolean'
+        ? patch.general.startWithWindows
+        : Boolean(general.startWithWindows);
+      const startMinimized = typeof patch.general.startMinimized === 'boolean'
+        ? patch.general.startMinimized
+        : Boolean(general.startMinimized);
+      await startupService.setStartup(startWithWindows, startMinimized);
     }
 
     if (patch.playback) {
       if (patch.playback.fitMode) wallpaperManager.setFitMode(patch.playback.fitMode);
-      if (typeof patch.playback.intervalMinutes === 'number') {
+      if (patch.playback.intervalMinutes !== undefined) {
         wallpaperManager.setIntervalMinutes(patch.playback.intervalMinutes);
+      }
+      if (typeof patch.playback.shuffle === 'boolean') {
+        wallpaperManager.setShuffle(patch.playback.shuffle);
       }
       if (typeof patch.playback.playOnlyWhenDesktopFocused === 'boolean') {
         wallpaperManager.setPlayOnlyWhenDesktopFocused(patch.playback.playOnlyWhenDesktopFocused);
